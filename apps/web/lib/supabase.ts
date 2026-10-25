@@ -146,7 +146,7 @@ export async function saveCustomMeal(mealData: Omit<CustomMealRecord, 'id' | 'cr
 
 export async function getUserCustomMeals(userId: string): Promise<CustomMealRecord[]> {
   try {
-    const res = await fetch(`http://localhost:5000/api/orders/custom-meals/list?userId=${encodeURIComponent(userId)}`);
+    const res = await fetch(`/api/orders/custom-meals?userId=${encodeURIComponent(userId)}`);
     if (res.ok) {
       const data = await res.json();
       return data.meals || [];

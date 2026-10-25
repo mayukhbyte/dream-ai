@@ -399,6 +399,24 @@
       "thermalOptimalTemp": 88,
       "qualityScore": 99,
       "hotProbability": 97
+    },
+    {
+      "id": "dish_1792959834608_rk67",
+      "restaurantId": "rest-1",
+      "restaurantName": "Moti Mahal Delights",
+      "name": "Thumbs up – Chef Curated",
+      "description": "Handcrafted for your craving: fresh ingredients prepared at Moti Mahal Delights. Verified thermodynamic packaging for maximum hot arrival retention.",
+      "price": 240,
+      "category": "Main Course",
+      "isVegetarian": false,
+      "isVegan": false,
+      "isSpicy": false,
+      "preparationTime": 16,
+      "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+      "isAvailable": true,
+      "thermalOptimalTemp": 88,
+      "qualityScore": 99,
+      "hotProbability": 97
     }
   ],
   "orders": [
@@ -1047,6 +1065,30 @@
     }
   ],
   "foodMemories": [
+    {
+      "userId": "guest-user",
+      "query": "mojito",
+      "matchedDish": "Mojito – Chef Curated",
+      "qualityScore": 99,
+      "id": "mem_1792960204964_025ni",
+      "createdAt": "2026-10-25T20:30:04.964Z"
+    },
+    {
+      "userId": "guest-user",
+      "query": "mojito",
+      "matchedDish": "Mojito – Chef Curated",
+      "qualityScore": 99,
+      "id": "mem_1792960201525_m1b1c",
+      "createdAt": "2026-10-25T20:30:01.525Z"
+    },
+    {
+      "userId": "demo-customer-123",
+      "query": "thumbs up",
+      "matchedDish": "Thumbs up – Chef Curated",
+      "qualityScore": 99,
+      "id": "mem_1792959834702_0ptcd",
+      "createdAt": "2026-10-25T20:23:54.702Z"
+    },
     {
       "userId": "demo-customer-123",
       "query": "mojito",

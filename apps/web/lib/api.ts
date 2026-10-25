@@ -1,19 +1,28 @@
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Use relative paths so this works on Vercel (serverless) and locally.
+// Falls back to env var only if explicitly set (e.g. for a separate backend host).
+const API_BASE = (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes('localhost'))
+  ? process.env.NEXT_PUBLIC_API_URL
+  : '';
 
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket && typeof window !== 'undefined') {
-    socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000
+    // On Vercel there is no separate WebSocket server; SSE is used instead.
+    // Only attempt a socket connection if a dedicated backend URL is provided.
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes('localhost'))
+      ? process.env.NEXT_PUBLIC_API_URL
+      : window.location.origin;
+    socket = io(socketUrl, {
+      transports: ['polling'],
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000
     });
 
     socket.on('connect', () => {
-      console.log('⚡ Connected to DreamFood Real-Time WebSocket Server at', API_BASE);
+      console.log('⚡ Connected to DreamFood Real-Time Server at', socketUrl);
     });
 
     socket.on('disconnect', () => {
@@ -191,7 +200,7 @@ export interface FoodMemoryRecord {
 // Check Backend Health
 export async function checkBackendHealth(): Promise<{ status: string; connected: boolean; stats?: any }> {
   try {
-    const res = await fetch(`${API_BASE}/health`);
+    const res = await fetch(`${API_BASE}/api/health`);
     if (res.ok) {
       const data = await res.json();
       return { status: 'ok', connected: true, stats: data.stats };
@@ -204,7 +213,7 @@ export async function checkBackendHealth(): Promise<{ status: string; connected:
 
 // Fetch all dishes directly from real backend database
 export async function getLiveDishes(): Promise<Dish[]> {
-  const res = await fetch(`${API_BASE}/api/restaurants/dishes/all`);
+  const res = await fetch(`${API_BASE}/api/restaurants/dishes`);
   if (!res.ok) throw new Error(`Failed to fetch dishes: ${res.statusText}`);
   const data = await res.json();
   return data.dishes || [];
@@ -219,6 +228,7 @@ export async function getRestaurants(query?: string): Promise<Restaurant[]> {
   return data.restaurants || [];
 }
 
+
 // Fetch orders for user from real backend database
 export async function getOrders(userId?: string): Promise<Order[]> {
   const url = userId ? `${API_BASE}/api/orders?userId=${encodeURIComponent(userId)}` : `${API_BASE}/api/orders`;
@@ -227,6 +237,7 @@ export async function getOrders(userId?: string): Promise<Order[]> {
   const data = await res.json();
   return data.orders || [];
 }
+
 
 // Place a new order into the real backend
 export async function createOrder(payload: {
@@ -292,7 +303,7 @@ export async function askAIConcierge(prompt: string, userId?: string, deliveryMo
 
 // Save Custom Meal Configuration
 export async function saveCustomMeal(payload: CustomMealPayload) {
-  const res = await fetch(`${API_BASE}/api/orders/custom-meal`, {
+  const res = await fetch(`${API_BASE}/api/orders/custom-meals`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -303,7 +314,7 @@ export async function saveCustomMeal(payload: CustomMealPayload) {
 
 // Get user's saved food memory
 export async function getFoodMemories(userId?: string): Promise<FoodMemoryRecord[]> {
-  const url = userId ? `${API_BASE}/api/orders/food-memory/list?userId=${encodeURIComponent(userId)}` : `${API_BASE}/api/orders/food-memory/list`;
+  const url = userId ? `${API_BASE}/api/orders/food-memory?userId=${encodeURIComponent(userId)}` : `${API_BASE}/api/orders/food-memory`;
   const res = await fetch(url);
   if (!res.ok) return [];
   const data = await res.json();
