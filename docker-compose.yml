@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: dreamfood-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dreamfood}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dreamfood123}
+      POSTGRES_DB: ${POSTGRES_DB:-dreamfood}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dreamfood}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    container_name: dreamfood-api
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-dreamfood}:${POSTGRES_PASSWORD:-dreamfood123}@db:5432/${POSTGRES_DB:-dreamfood}?schema=public
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./packages/api:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Optional: Redis for caching (can be added later)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: dreamfood-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+
+volumes:
+  postgres_data:

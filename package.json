@@ -1,0 +1,30 @@
+{
+  "name": "dream-food-delivery",
+  "version": "1.0.0",
+  "description": "Next-generation AI-powered food delivery application",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace=@dreamfood/web run dev",
+    "preview": "npm --workspace=@dreamfood/web run dev",
+    "build": "turbo run build",
+    "dev:all": "turbo run dev --parallel",
+    "dev:web": "npm --workspace=@dreamfood/web run dev",
+    "dev:api": "npm --workspace=@dreamfood/api run dev",
+    "build:web": "npm --workspace=@dreamfood/web run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "firebase": "^12.19.0",
+    "firebase-admin": "^14.4.0",
+    "openai": "^7.20.0"
+  }
+}

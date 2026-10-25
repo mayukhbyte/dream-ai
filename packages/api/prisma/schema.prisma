@@ -1,0 +1,267 @@
+// Prisma Schema for Dream Food Delivery App
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  preferences   Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isActive      Boolean  @default(true)
+  role          Role     @default(CUSTOMER)
+
+  // Relations
+  orders        Order[]
+  cartItems     CartItem[]
+  reviews       Review[]
+  favoriteRestaurants Restaurant[] @relation("FavoriteRestaurants")
+}
+
+// User Role
+enum Role {
+  CUSTOMER
+  RESTAURANT_OWNER
+  RIDER
+  ADMIN
+}
+
+// Restaurant Model
+model Restaurant {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  cuisineType   String[]
+  address       String
+  latitude      Float
+  longitude     Float
+  phone         String?
+  email         String?
+  openingTime   String   @default("09:00")
+  closingTime   String   @default("22:00")
+  isOpen        Boolean  @default(true)
+  deliveryFee   Float    @default(0)
+  minOrderValue Float    @default(0)
+  rating        Float    @default(0)
+  qualityScore  Float    @default(0)
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  menuItems     MenuItem[]
+  orders        Order[]
+  reviews       Review[]
+  favorites     User[]   @relation("FavoriteRestaurants")
+}
+
+// Menu Item Model
+model MenuItem {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  price         Float
+  category      String   // e.g., "Main Course", "Appetizer", "Dessert"
+  isVegetarian  Boolean  @default(false)
+  isVegan       Boolean  @default(false)
+  isSpicy       Boolean  @default(false)
+  preparationTime Int     @default(15) // in minutes
+  imageUrl      String?
+  isAvailable   Boolean  @default(true)
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  orderItems    OrderItem[]
+  reviews       Review[]
+}
+
+// Cart Item Model
+model CartItem {
+  id            String   @id @default(uuid())
+  quantity      Int      @default(1)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  menuItemId    String
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, menuItemId])
+}
+
+// Order Model
+model Order {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  riderId       String?
+  rider         User?    @relation("OrderRider", fields: [riderId], references: [id])
+  status        OrderStatus @default(PENDING)
+  totalAmount   Float
+  subtotal      Float
+  taxAmount     Float
+  deliveryFee   Float
+  specialInstructions String?
+  deliveryAddress String
+  deliveryLat   Float?
+  deliveryLng   Float?
+  estimatedDeliveryTime DateTime?
+  actualDeliveryTime DateTime?
+  placedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  orderItems    OrderItem[]
+  payment       Payment?
+  reviews       Review[]
+}
+
+// Order Status Enum
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+// Order Item Model
+model OrderItem {
+  id            String   @id @default(uuid())
+  quantity      Int
+  priceAtTime   Float    // Price when order was placed
+  specialInstructions String?
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  menuItemId    String
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([orderId, menuItemId])
+}
+
+// Payment Model
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  amount        Float
+  paymentMethod PaymentMethod
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  @@unique([orderId])
+}
+
+// Payment Method Enum
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  UPI
+  WALLET
+  CASH_ON_DELIVERY
+}
+
+// Payment Status Enum
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Review Model
+model Review {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  restaurantId  String?
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id])
+  menuItemId    String?
+  menuItem      MenuItem? @relation(fields: [menuItemId], references: [id])
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  rating        Int      // 1-5 stars
+  comment       String?
+  foodQuality   Int?     // 1-5 for food quality
+  deliveryTime  Int?     // 1-5 for delivery time
+  packaging     Int?     // 1-5 for packaging
+  temperature   Int?     // 1-5 for temperature accuracy
+  createdAt     DateTime @default(now())
+}
+
+// AI Recommendation Model (to store generated recommendations)
+model AIRecommendation {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  restaurantIds String[] // List of recommended restaurant IDs
+  menuItemIds   String[] // List of recommended menu item IDs
+  context       Json?    // Context used for recommendation (time, location, etc.)
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+}
+
+// Food Quality Metrics Model
+model FoodQualityMetrics {
+  id            String   @id @default(uuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  menuItemId    String?
+  menuItem      MenuItem? @relation(fields: [menuItemId], references: [id])
+  tasteRating   Float    @default(0)
+  temperatureRating Float @default(0)
+  packagingRating Float @default(0)
+  portionRating Float @default(0)
+  overallScore  Float    @default(0)
+  reviewCount   Int      @default(0)
+  lastUpdated   DateTime @default(now())
+
+  @@unique([restaurantId, menuItemId])
+}
+
+// Delivery Prediction Model
+model DeliveryPrediction {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  predictedTime DateTime
+  confidence    Float    // 0-1 confidence score
+  factors       Json?    // Factors considered for prediction
+  createdAt     DateTime @default(now())
+}
+
+// Environmental Impact Model
+model EnvironmentalImpact {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  distanceSaved Float    // in km
+  emissionsSaved Float   // in kg CO2
+  packagingSaved Float   // in grams
+  groupedWith   String[] // Order IDs that were grouped with this one
+  createdAt     DateTime @default(now())
+}
